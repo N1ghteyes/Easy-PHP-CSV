@@ -30,18 +30,21 @@ class eacsv
     $this->deliminator = $this->_setDeliminator($deliminator);
     $this->path = $path;
 
-    $this->cp = fopen($this->path, 'w+'); //open a new file, or put the pointer at the end.
+    $this->cp = fopen($this->path, 'c+'); //open a new file, the pointer is automatically placed at the beginning.
+    fseek($this->cp, 0, SEEK_END ); // move the pointer to the end of the file opened.
 
     if(!empty($csvHeadData)){ //assume we're adding a header regardless of file contents
       $this->_processHeader($csvHeadData, TRUE);
     }
-    if(!empty($csvrowData)){ //if we've passed in array data, build an initial csv file.
+    if(!empty($csvrowData)){ //if we've passed in array data, add csv data to the file..
       $this->_processArrays($csvrowData);
     }
   }
 
   public function getCsv(){
-
+    if($this->path == 'php://output'){
+      fclose($this->cp); //we're outputting to browser so just close the pointer.
+    }
   }
 
   public function saveCsv(){
@@ -65,11 +68,14 @@ class eacsv
     if($start){ //if start is true, add a line to the start of the csv. To do this, we need to create copy any existing data and recreate the file.
       $pos = fgets($this->cp);
       if($pos != FALSE){ //if false, or 0 we can ignore this.
-        $filesize = filesize($this->path); //read the file we opened, check its length.
-        $initialcsv = fread($this->cp, $filesize);
+        $initialfile = file_get_contents($this->path); //load the file contents
+        $this->cp = fopen($this->path, 'c+'); //open a new file.
+        fputcsv($this->cp, $csvHead); //write the header to the top of the new file
+        fwrite($this->cp, $initialfile); //add the old file onto the end of the header.
       }
+    } else {
+      fputcsv($this->cp, $csvHead, $this->deliminator);
     }
-    fputcsv($this->cp, $csvHead, $this->deliminator);
   }
 
   /**
