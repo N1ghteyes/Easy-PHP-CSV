@@ -36,9 +36,11 @@ class eacsv
     if(!empty($csvHeadData)){ //assume we're adding a header regardless of file contents
       $this->_processHeader($csvHeadData, TRUE);
     }
-    if(!empty($csvrowData)){ //if we've passed in array data, add csv data to the file..
-      $this->_processArrays($csvrowData);
+    if(!empty($csvRowData)){ //if we've passed in array data, add csv data to the file..
+      $this->_processArrays($csvRowData);
     }
+
+    return $this;
   }
 
   public function getCsv(){
