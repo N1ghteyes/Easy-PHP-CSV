@@ -108,7 +108,7 @@ class eacsv
     private function _setExportHeaders(){
         if($this->path == 'php://output') {
             header('Content-Type: application/csv');
-            header('Content-Disposition: attachment; filename=' . $this->filename . '.csv');
+            header('Content-Disposition: attachment; filename=' . $this->filename);
             header('Pragma: no-cache');
         }
     }
