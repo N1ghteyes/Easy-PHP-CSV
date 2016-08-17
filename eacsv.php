@@ -19,6 +19,7 @@ class eacsv
     private $deliminator; // Deliminator - not changeable after class is instantiated.
 
     public $filename;
+    public $csvstring;
 
     /**
      * Constructor function - pass all info for the csv, none or somewhere in the middle.
@@ -35,7 +36,8 @@ class eacsv
         $this->filename = $filename;
         $this->_setExportHeaders();
 
-        $this->cp = fopen($this->path, 'c+'); //open a new file, the pointer is automatically placed at the beginning.
+        $this->cp = $this->path != 'php://output' ? fopen($this->path.'/'.$this->filename, 'c+') : fopen($this->path, 'c+'); //open a new file, the pointer is automatically placed at the beginning.
+
         if($this->path != 'php://output') {
             fseek($this->cp, 0, SEEK_END); // move the pointer to the end of the file opened.
         }
@@ -113,19 +115,32 @@ class eacsv
         }
     }
 
+    private function _closeFilepointer(){
+        fclose($this->cp); //we're outputting to browser so just close the pointer.
+    }
+
     /**
-     * Function to handle the return of the CSV file.
+     * Function to handle the return of the CSV file. either as a string or straight to the browser.
      * @return $this
      */
     public function getCsv()
     {
-        fclose($this->cp); //we're outputting to browser so just close the pointer.
+        $this->_closeFilepointer();
+        if($this->path == 'php://output') {
+            return $this;
+        }
+
+        $this->csvstring = file_get_contents($this->path);
         return $this;
     }
 
+    /**
+     * function to close the file pointer and thus save the csv file by ending the stream.
+     */
     public function saveCsv()
     {
-
+        $this->_closeFilepointer(); //Simply close the file pointer.
+        return $this;
     }
 
     /**
