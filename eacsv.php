@@ -45,7 +45,7 @@ class eacsv
       $this->_processHeader($csvHeadData, TRUE);
     }
     if (!empty($csvRowData)) { //if we've passed in array data, add csv data to the file..
-      $this->_processArrays($csvRowData);
+      $this->_processRows($csvRowData);
     }
 
     return $this;
@@ -97,12 +97,12 @@ class eacsv
    * @param $csvArray
    * @return $this
    */
-  private function _processArrays($csvArray)
+  private function _processRows($csvArray)
   {
     $rows = count($csvArray); //count the rows, allows usage of for loops - much faster than foreach in this context.
     $keys = array_keys($csvArray); //handle non numeric, non 0 arrays.
     for ($i = 0; $i < $rows; ++$i) {
-      fputcsv($this->cp, $csvArray[$keys[$i]], $this->deliminator);
+      fputcsv($this->cp, (array)$csvArray[$keys[$i]], $this->deliminator); // We typecast to arrays in case we're passed an array of objects.
     }
     return $this;
   }
@@ -116,6 +116,9 @@ class eacsv
     }
   }
 
+  /**
+   * Close the file pointer and end the stream.
+   */
   private function _closeFilepointer()
   {
     fclose($this->cp); //we're outputting to browser so just close the pointer.
@@ -146,11 +149,12 @@ class eacsv
   }
 
   /**
+   * Function to allow us to add a row to the end of the file.
    * @param $rows
    */
   public function addRows($rows)
   {
-    $this->_processArrays($rows);
+    $this->_processRows($rows);
     return $this;
   }
 
