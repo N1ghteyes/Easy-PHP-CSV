@@ -1,4 +1,4 @@
-# Easy-PHP-CSV
+# Easy PHP CSV
 PHP CSV class to make creating and outputting CSV files and simple as possible. No Dependancies.
 
 ## Usage Examples
