@@ -20,6 +20,7 @@ class eacsv
 
   public $filename;
   public $csvstring;
+  public $csvArray = [];
 
   /**
    * Constructor function - pass all info for the csv, none or somewhere in the middle.
@@ -125,17 +126,54 @@ class eacsv
   }
 
   /**
+   * Function to process a CSV string into an array. Can split into array by header. By default, headers are sanitised before use so may not match exactly whats been given.
+   * @param $string
+   * @param bool $hasHeaders
+   * @param bool $safeHeaders
+   * @return $this
+   */
+  public function csvStringToArray($string, $hasHeaders = FALSE, $safeHeaders = TRUE){
+    $this->csvArray = []; //reset this, just in case.
+    $headers = [];
+    $rows = explode('\r\n', str_replace(["\r", "\n"], '\\r\\n', $string)); //Explode on new lows to get rows.
+    if($hasHeaders){
+      $unsafeHeaders = str_getcsv(array_shift($rows), $this->deliminator); //get the first row as headers
+      if($safeHeaders){
+        foreach($unsafeHeaders as $header){
+          $headers[] = trim(strtolower(str_replace(['/', '\\', ' '], ['_'], $header)));
+        }
+      }
+    }
+    $rowNum = count($rows);
+    for($i=0; $i < $rowNum; ++$i){
+      $rowdata = str_getcsv($rows[$i], $this->deliminator);
+      if(!empty($headers)) {
+        $rowCount = count($rowdata);
+        for($r=0;$r < $rowCount; ++$r) {
+        $this->csvArray[$i][$headers[$r]] = $rowdata[$r];
+        }
+      } else {
+        $this->csvArray[$i] = $rowdata; //no headers? no point processing.
+      }
+    }
+
+    return $this;
+  }
+
+  /**
    * Function to handle the return of the CSV file. either as a string or straight to the browser.
    * @return $this
    */
-  public function getCsv()
+  public function getCsv($hasHeaders = FALSE)
   {
     $this->_closeFilepointer();
     if ($this->path == 'php://output') {
       return $this;
     }
 
-    $this->csvstring = file_get_contents($this->path);
+    $this->csvstring = file_get_contents($this->path . '/' . $this->filename);
+    $this->csvStringToArray($this->csvstring, $hasHeaders);
+
     return $this;
   }
 
