@@ -4,7 +4,7 @@ PHP CSV class to make creating and outputting CSV files and simple as possible. 
 ## Usage Examples
 First, include the class and make a default data array.
   ```php
-  include('Easy-PHP-CSV/eacsv.php'); //include the class. This will be namespaced at some point.
+  use apexl\EasyCSV;
   
   //Build our demo csv array of arrays. keys are ignored for now so can be numeric or string.
   //Each array is a row containing column data.
