@@ -16,7 +16,7 @@ First, include the class and make a default data array.
   
 Output a CSV file with no headers straight to the browser (file download)
   ```php
-  $eacsv = new eacsv($demo);
+  $eacsv = new EasyCSV($demo);
   $eacsv->getCsv(); // By default, the csv filepath is set to 'php://output' which passes the file straight to the browser as export.csv
   ```
 
@@ -24,24 +24,24 @@ Output a CSV file with headers straight to the browser (file download)
 ```php
 //headers are simple a one row array.
 $headers = ['col Header 1', 'col Header 2', 'col Header 3', 'col Header 4', 'col Header 5']; //array of headers.
-$eacsv = new eacsv($demo, $headers);
+$eacsv = new EasyCSV($demo, $headers);
 $eacsv->getCsv(); // By default, the csv filepath is set to 'php://output' which passes the file straight to the browser as export.csv
 ```
 
 Output a CSV file with no headers, tab deliminated straight to the browser (file download). 
 ```php
-$eacsv = new eacsv($demo, array(), '\t'); //NOTE the class will handle the following for Tab delimination: '\t', "\t", "tab" 
+$eacsv = new EasyCSV($demo, array(), '\t'); //NOTE the class will handle the following for Tab delimination: '\t', "\t", "tab" 
 $eacsv->getCsv(); // By default, the csv filepath is set to 'php://output' which passes the file straight to the browser as export.csv
 ```
 
 Save a CSV file to a directory and get the filepath.
 ```php
-$eacsv = new eacsv($demo, array(), ',', 'mycsv.csv', '/downloads/exports'); //results in example.com/downloads/exports/mycsv.csv
+$eacsv = new EasyCSV($demo, array(), ',', 'mycsv.csv', '/downloads/exports'); //results in example.com/downloads/exports/mycsv.csv
 $eacsv->saveCsv(); //getCsv also works here, and will return a string of data. use saveCsv if you dont need the string.
 ```
 
 Get the contents of an existing CSV file called 'mycsv.csv' as a string
 ```php
-$eacsv = new eacsv($demo, array(), ',', 'mycsv.csv', '/downloads/exports'); //results in example.com/downloads/exports/mycsv.csv
+$eacsv = new EasyCSV($demo, array(), ',', 'mycsv.csv', '/downloads/exports'); //results in example.com/downloads/exports/mycsv.csv
 $csvstring = $eacsv->getCsv()->csvstring; //getCsv also works here, and will return a string of data. use saveCsv if you dont need the string.
 ```
