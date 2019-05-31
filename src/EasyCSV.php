@@ -1,17 +1,19 @@
 <?php
 
+namespace apexl;
+
 /**
  * PHP class to easily handle CSV files
  *
- * @author N1ghteyes - www.source-control.co.uk
- * @copyright 2016 N1ghteyes
+ * @author Apexl - www.apexlstudios.com
+ * @copyright 2019 Apexl
  * @license license.txt The MIT License (MIT)
  * @link https://github.com/N1ghteyes/Easy-PHP-CSV
  *
  * @TODO: many many things. including finish up and produce a release.
  * @TODO: much tidying, streamlining and otherwise sanitizing of code.
  */
-class eacsv
+class EasyCSV
 {
 
     private $path; //path location for csv file pointer.
@@ -191,6 +193,7 @@ class eacsv
     /**
      * Function to allow us to add a row to the end of the file.
      * @param $rows
+     * @return $this
      */
     public function addRows($rows)
     {

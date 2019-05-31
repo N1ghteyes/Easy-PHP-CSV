@@ -1,0 +1,19 @@
+{
+  "name": "apexl/easy-csv",
+  "description": "Package to make creation and management of CSV files easy.",
+  "type": "library",
+  "require": {
+    "php" : "^7.0",
+  },
+  "authors": [
+    {
+      "name": "Toby New",
+      "email": "t@sc.vg"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "apexl\\": "src/"
+    }
+  }
+}
