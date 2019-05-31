@@ -87,9 +87,11 @@ class EasyCSV
             $pos = fgets($this->cp);
             if ($pos != FALSE) { //if false, or 0 we can ignore this.
                 $initialfile = file_get_contents($this->path); //load the file contents
-                $this->cp = fopen($this->path, 'c+'); //open a new file.
+                $this->cp = fopen($this->path, 'w+'); //open a new file.
                 fputcsv($this->cp, $csvHead); //write the header to the top of the new file
                 fwrite($this->cp, $initialfile); //add the old file onto the end of the header.
+            } else {
+                fputcsv($this->cp, $csvHead, $this->deliminator);
             }
         } else {
             fputcsv($this->cp, $csvHead, $this->deliminator);
