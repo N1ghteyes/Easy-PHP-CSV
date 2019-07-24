@@ -17,40 +17,162 @@ class EasyCSV
 {
 
     private $path; //path location for csv file pointer.
+    private $pathInfo; //path info for any loaded csv file
     private $cp; //csv File pointer storage
     private $deliminator; // Deliminator - not changeable after class is instantiated.
+    private $storeFilename = 'export.csv';
+    private $storePath;
 
-    public $filename;
-    public $csvstring;
+    public $loadedFilename;
+    public $csvString;
     public $csvArray = array();
 
-    /**
-     * Constructor function - pass all info for the csv, none or somewhere in the middle.
-     * @param array $csvRowData
-     * @param $csvHeadData
-     * @param string $deliminator
-     * @param string $path
-     */
-    public function __construct($csvRowData = array(), $csvHeadData = array(), $deliminator = ',', $filename = 'export.csv', $path = 'php://output')
+
+    public function __construct()
     {
         //set defaults
-        $this->deliminator = $this->_setDeliminator($deliminator);
+        $this->deliminator = $this->setDeliminator();
+    }
+
+    /**
+     * @param $fileName
+     * @return $this
+     */
+    public function setFileName($fileName){
+        $this->storeFilename = $fileName;
+        return $this;
+    }
+
+    /**
+     * Get the loaded filename
+     * @return mixed
+     */
+    public function getFileName(){
+        return $this->loadedFilename;
+    }
+
+    /**
+     * Load a CSV from a file path.
+     * @param $path
+     * @return $this
+     */
+    public function loadFromFile($path){
+        $this->setPathInfo($path);
+        $this->openFile();
+        return $this;
+    }
+
+    /**
+     * @param bool $hasHeaders
+     * @return array
+     */
+    public function toArray($hasHeaders = TRUE){
+        $this->createArrayFromFile($hasHeaders);
+        return $this->csvArray;
+    }
+
+    /**
+     * Convert a data array to a csv file.
+     * @param $data
+     * @param array $headers
+     * @param bool $headersInData
+     */
+    public function arrayToCsv($data, $headers = [], $headersInData = TRUE){
+        //to begin with we use php output. We can store permanently later if we want to.
+        $this->cp = fopen('php://output', 'c+');
+        //headers as keys in data? grab the first row and the keys.
+        $hasHeaders = empty($headers) && $headersInData === FALSE ? FALSE : TRUE;
+        if($headersInData){
+            $firstElement = reset($data);
+            //check if we have multiple rows, or just the one.
+            $headers = is_array($firstElement) ? array_keys($firstElement) : array_keys($data);
+        }
+
+        if($hasHeaders) {
+            $this->_processHeader($headers);
+        }
+        //check if data is a single row, or an array of rows, set accordingly.
+        $data = is_string(reset($data)) ? [$data] : $data;
+        $this->_processRows($data);
+    }
+
+    /**
+     * @param $data
+     * @param array $headers
+     */
+    public function appendDataToCsv($data, $headers = []){
+        //@todo write this
+    }
+
+    /**
+     * Function to store the current csv data
+     * @return $this|bool
+     */
+    public function store(){
+        if(!$this->storePath){
+            //if we dont have a store path, but we do have a path set, assume we're trying to store back to the loaded file.
+            if($this->path){
+                $this->storePath = $this->path;
+            } else {
+                //throw error as we can't store this.
+                return FALSE;
+            }
+        }
+        //If path isn't set, we must be working with php output.
+        $initialFile = !$this->path ? file_get_contents('php://output') : file_get_contents($this->path); //load the file contents
+        $this->cp = fopen($this->storePath, 'w+'); //open a new file.
+        fwrite($this->cp, $initialFile);
+        //we dont close the file pointer in case we want to interact with the file again this session
+        return $this;
+    }
+
+    /**
+     * Function to set the new store path.
+     * @todo maybe check for directory write?
+     * @param $path
+     * @return $this
+     */
+    public function setStorePath($path){
+        $this->setPathInfo($path, FALSE);
+        return $this;
+    }
+
+    /**
+     * Method to store path info.
+     * @param $path
+     * @param bool $loading
+     */
+    private function setPathInfo($path, $loading = TRUE){
+        $this->pathInfo = pathinfo($path);
+        if($loading) {
+            $this->loadedFilename = $this->pathInfo['filename'];
+        } else {
+            $this->storeFilename = $this->pathInfo['filename'];
+            $this->storePath = $path;
+        }
         $this->path = $path;
-        $this->filename = $filename;
-        $this->_setExportHeaders();
+    }
 
-        $this->cp = $this->path != 'php://output' ? fopen($this->path . '/' . $this->filename, 'c+') : fopen($this->path, 'c+'); //open a new file, the pointer is automatically placed at the beginning.
+    /**
+     * Open a local csv file
+     * @param bool $allowEditing
+     */
+    private function openFile($allowEditing = TRUE){
+        //check the mode to open the file.
+        $mode = $allowEditing ? 'c+' : 'r';
+        $this->cp = fopen($this->path, $mode);
+        //if we're editing, move the pointer to the end of the file.
+        if($allowEditing){
+            $this->endOfFile();
+        }
+    }
 
-        if ($this->path != 'php://output') {
-            fseek($this->cp, 0, SEEK_END); // move the pointer to the end of the file opened.
-        }
-        if (!empty($csvHeadData)) { //assume we're adding a header regardless of file contents
-            $this->_processHeader($csvHeadData, TRUE);
-        }
-        if (!empty($csvRowData)) { //if we've passed in array data, add csv data to the file..
-            $this->_processRows($csvRowData);
-        }
-
+    /**
+     * Method to move the file pointer to the end of the opened file. allows us to append additional rows etc
+     * @return $this
+     */
+    private function endOfFile(){
+        fseek($this->cp, 0, SEEK_END);
         return $this;
     }
 
@@ -59,7 +181,7 @@ class EasyCSV
      * @param $deliminator
      * @return string
      */
-    private function _setDeliminator($deliminator)
+    public function setDeliminator($deliminator = ',')
     {
         switch ($deliminator) {
             case 'comma':
@@ -112,11 +234,14 @@ class EasyCSV
         return $this;
     }
 
+    /**
+     * Set request headers to allow us to download straight to browser
+     */
     private function _setExportHeaders()
     {
         if ($this->path == 'php://output') {
             header('Content-Type: application/csv');
-            header('Content-Disposition: attachment; filename=' . $this->filename);
+            header('Content-Disposition: attachment; filename=' . $this->storeFilename);
             header('Pragma: no-cache');
         }
     }
@@ -127,6 +252,16 @@ class EasyCSV
     private function _closeFilepointer()
     {
         fclose($this->cp); //we're outputting to browser so just close the pointer.
+    }
+
+    /**
+     * Read the file contents and call the string to array method so we can treat a loaded csv file like an array
+     * @param $hasHeaders
+     */
+    private function createArrayFromFile($hasHeaders){
+        //we're loading from a local file.
+        $this->csvString = file_get_contents($this->path);
+        $this->csvStringToArray($this->csvString, $hasHeaders);
     }
 
     /**
@@ -170,25 +305,15 @@ class EasyCSV
      * Function to handle the return of the CSV file. either as a string or straight to the browser.
      * @return $this
      */
-    public function getCsv($hasHeaders = FALSE)
+    public function downloadCsv()
     {
-        $this->_closeFilepointer();
+        //We're outputting to the browser, so no need to store locally. Simply process and pass the data back
         if ($this->path == 'php://output') {
+            $this->_setExportHeaders();
+            $this->_closeFilepointer();
             return $this;
         }
 
-        $this->csvstring = file_get_contents($this->path . '/' . $this->filename);
-        $this->csvStringToArray($this->csvstring, $hasHeaders);
-
-        return $this;
-    }
-
-    /**
-     * function to close the file pointer and thus save the csv file by ending the stream.
-     */
-    public function saveCsv()
-    {
-        $this->_closeFilepointer(); //Simply close the file pointer.
         return $this;
     }
 
