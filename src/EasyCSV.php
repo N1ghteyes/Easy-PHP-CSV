@@ -290,7 +290,7 @@ class EasyCSV
             $rowdata = str_getcsv($rows[$i], $this->deliminator);
             if(!empty($headers)) {
                 $rowCount = count($rowdata);
-                for($r=0;$r < $rowCount; ++$r) {
+                for($r=0;$r <= $rowCount; ++$r) {
                     $this->csvArray[$i][$headers[$r]] = $rowdata[$r];
                 }
             } else {
