@@ -290,8 +290,9 @@ class EasyCSV
             $rowdata = str_getcsv($rows[$i], $this->deliminator);
             if(!empty($headers)) {
                 $rowCount = count($rowdata);
-                for($r=0;$r <= $rowCount; ++$r) {
-                    $this->csvArray[$i][$headers[$r]] = $rowdata[$r];
+                for($r=0;$r < $rowCount; ++$r) {
+                    //allow for uneven row lengths
+                    $this->csvArray[$i][$headers[$r]] = isset($rowdata[$r]) ? $rowdata[$r] : '';
                 }
             } else {
                 $this->csvArray[$i] = $rowdata; //no headers? no point processing.
