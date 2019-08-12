@@ -2,6 +2,8 @@
 
 namespace apexl;
 
+use \ForceUTF8\Encoding;
+
 /**
  * PHP class to easily handle CSV files
  *
@@ -292,7 +294,7 @@ class EasyCSV
                 $rowCount = count($rowdata);
                 for($r=0;$r < $rowCount; ++$r) {
                     //allow for uneven row lengths
-                    $this->csvArray[$i][$headers[$r]] = isset($rowdata[$r]) ? $rowdata[$r] : '';
+                    $this->csvArray[$i][$headers[$r]] = isset($rowdata[$r]) ? Encoding::fixUTF8($rowdata[$r], Encoding::ICONV_IGNORE) : '';
                 }
             } else {
                 $this->csvArray[$i] = $rowdata; //no headers? no point processing.
