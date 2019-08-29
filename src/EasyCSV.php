@@ -25,10 +25,13 @@ class EasyCSV
     private $deliminator; // Deliminator - not changeable after class is instantiated.
     private $storeFilename = 'export.csv';
     private $storePath = 'php://output';
+    private $eol = "\r\n"; //allows us to specify a specific EOL.
+    private $enclosure = '"';
 
     public $loadedFilename;
     public $csvString;
     public $csvArray = array();
+
 
 
     public function __construct()
@@ -63,6 +66,22 @@ class EasyCSV
         $this->setPathInfo($path);
         $this->openFile();
         return $this;
+    }
+
+    /**
+     * Function setter for $eol
+     * @param $eol
+     */
+    public function setEol($eol){
+        $this->eol = $eol;
+    }
+
+    /**
+     * Function setter for $enclosure
+     * @param $enclosure
+     */
+    public function setEnclosure($enclosure){
+        $this->enclosure = $enclosure;
     }
 
     /**
@@ -215,13 +234,13 @@ class EasyCSV
             if ($pos != FALSE) { //if false, or 0 we can ignore this.
                 $initialfile = file_get_contents($this->path); //load the file contents
                 $this->openFile();
-                fputcsv($this->cp, $csvHead); //write the header to the top of the new file
+                $this->fputcsvEOL($csvHead); //write the header to the top of the new file
                 fwrite($this->cp, $initialfile); //add the old file onto the end of the header.
             } else {
-                fputcsv($this->cp, $csvHead, $this->deliminator);
+                $this->fputcsvEOL($csvHead);
             }
         } else {
-            fputcsv($this->cp, $csvHead, $this->deliminator);
+            $this->fputcsvEOL($csvHead);
         }
         $this->updateCsvString();
     }
@@ -239,7 +258,7 @@ class EasyCSV
         $rows = count($csvArray); //count the rows, allows usage of for loops - much faster than foreach in this context.
         $keys = array_keys($csvArray); //handle non numeric, non 0 arrays.
         for ($i = 0; $i < $rows; ++$i) {
-            fputcsv($this->cp, (array)$csvArray[$keys[$i]], $this->deliminator); // We typecast to arrays in case we're passed an array of objects.
+            $this->fputcsvEOL((array)$csvArray[$keys[$i]]); // We typecast to arrays in case we're passed an array of objects.
         }
         $this->updateCsvString();
         return $this;
@@ -280,10 +299,11 @@ class EasyCSV
      * @param bool $safeHeaders
      * @return $this
      */
-    public function csvStringToArray($string, $hasHeaders = FALSE, $safeHeaders = TRUE){
+    public function csvStringToArray($string = "", $hasHeaders = FALSE, $safeHeaders = TRUE){
+        $this->csvString = !empty($string) ? $string : $this->csvString;
         $this->csvArray = array(); //reset this, just in case.
         $headers = array();
-        $rows = explode('\r\n', str_replace("\r\n", '\\r\\n', $string)); //Explode on new lows to get rows.
+        $rows = explode('\r\n', str_replace("\r\n", '\\r\\n', $this->csvString)); //Explode on new lows to get rows.
         if($hasHeaders){
             $unsafeHeaders = str_getcsv(array_shift($rows), $this->deliminator); //get the first row as headers
             if($safeHeaders){
@@ -364,15 +384,21 @@ class EasyCSV
      * @return EasyCSV
      */
     public static function mergeFiles($mergedFileName, ...$pointers){
+        //we need to clear temp as we're writing in append mode.
         self::clearPHPTemp();
+        $cp = fopen('php://temp', 'a+');
         foreach ($pointers as $file){
             $contents = self::isPointer($file) ? stream_get_contents($file, -1, 0) : $file;
-            file_put_contents('php://temp', $contents, FILE_APPEND);
+            //writing in a+ mode means we always append.
+            fwrite($cp, $contents);
         }
+        $mergedString = stream_get_contents($cp, -1, 0);
+        fclose($cp);
+        self::clearPHPTemp();
+
         $eaCSV = new EasyCSV();
         $eaCSV->setFileName($mergedFileName);
-        $eaCSV->csvStringToArray(file_get_contents('php://temp'));
-        self::clearPHPTemp();
+        $eaCSV->csvStringToArray($mergedString);
         return $eaCSV;
     }
 
@@ -396,6 +422,20 @@ class EasyCSV
             return TRUE;
         }
         return FALSE;
+    }
+
+    /**
+     * Function to allow us to specify EOL for fputcsv. Resolved mixing \n in cells with EOL in csv files.
+     * @see modified from https://stackoverflow.com/a/21297335
+     * @param $data
+     * @return bool|int
+     */
+    private function fputcsvEOL($data) {
+        $response = fputcsv($this->cp, $data, $this->deliminator, $this->enclosure);
+        if($response !== FALSE && "\n" != $this->eol && 0 === fseek($handle, -1, SEEK_CUR)) {
+            fwrite($handle, $this->eol);
+        }
+        return $response;
     }
 
 }
