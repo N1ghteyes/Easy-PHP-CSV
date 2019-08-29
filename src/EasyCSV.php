@@ -18,12 +18,13 @@ use \ForceUTF8\Encoding;
 class EasyCSV
 {
 
-    private $path; //path location for csv file pointer.
+    private $path = 'php://temp'; //path location for csv file pointer.
     private $pathInfo; //path info for any loaded csv file
+    /** @var FILE  */
     private $cp; //csv File pointer storage
     private $deliminator; // Deliminator - not changeable after class is instantiated.
     private $storeFilename = 'export.csv';
-    private $storePath;
+    private $storePath = 'php://output';
 
     public $loadedFilename;
     public $csvString;
@@ -69,7 +70,7 @@ class EasyCSV
      * @return array
      */
     public function toArray($hasHeaders = TRUE){
-        $this->createArrayFromFile($hasHeaders);
+        $this->createArrayFromFile($hasHeaders, TRUE);
         return $this->csvArray;
     }
 
@@ -81,7 +82,7 @@ class EasyCSV
      */
     public function arrayToCsv($data, $headers = [], $headersInData = TRUE){
         //to begin with we use php output. We can store permanently later if we want to.
-        $this->cp = fopen('php://output', 'c+');
+        $this->openFile();
         //headers as keys in data? grab the first row and the keys.
         $hasHeaders = empty($headers) && $headersInData === FALSE ? FALSE : TRUE;
         if($headersInData){
@@ -161,11 +162,13 @@ class EasyCSV
      */
     private function openFile($allowEditing = TRUE){
         //check the mode to open the file.
-        $mode = $allowEditing ? 'c+' : 'r';
-        $this->cp = fopen($this->path, $mode);
-        //if we're editing, move the pointer to the end of the file.
-        if($allowEditing){
-            $this->endOfFile();
+        if(empty($this->cp)) {
+            $mode = $allowEditing ? 'c+' : 'r';
+            $this->cp = fopen($this->path, $mode);
+            //if we're editing, move the pointer to the end of the file.
+            if ($allowEditing) {
+                $this->endOfFile();
+            }
         }
     }
 
@@ -211,7 +214,7 @@ class EasyCSV
             $pos = fgets($this->cp);
             if ($pos != FALSE) { //if false, or 0 we can ignore this.
                 $initialfile = file_get_contents($this->path); //load the file contents
-                $this->cp = fopen($this->path, 'w+'); //open a new file.
+                $this->openFile();
                 fputcsv($this->cp, $csvHead); //write the header to the top of the new file
                 fwrite($this->cp, $initialfile); //add the old file onto the end of the header.
             } else {
@@ -220,6 +223,11 @@ class EasyCSV
         } else {
             fputcsv($this->cp, $csvHead, $this->deliminator);
         }
+        $this->updateCsvString();
+    }
+
+    private function updateCsvString(){
+        $this->csvString = stream_get_contents($this->cp, -1, 0);
     }
 
     /**
@@ -233,6 +241,7 @@ class EasyCSV
         for ($i = 0; $i < $rows; ++$i) {
             fputcsv($this->cp, (array)$csvArray[$keys[$i]], $this->deliminator); // We typecast to arrays in case we're passed an array of objects.
         }
+        $this->updateCsvString();
         return $this;
     }
 
@@ -241,7 +250,7 @@ class EasyCSV
      */
     private function _setExportHeaders()
     {
-        if ($this->path == 'php://output') {
+        if ($this->storePath == 'php://output') {
             header('Content-Type: application/csv');
             header('Content-Disposition: attachment; filename=' . $this->storeFilename);
             header('Pragma: no-cache');
@@ -260,9 +269,7 @@ class EasyCSV
      * Read the file contents and call the string to array method so we can treat a loaded csv file like an array
      * @param $hasHeaders
      */
-    private function createArrayFromFile($hasHeaders){
-        //we're loading from a local file.
-        $this->csvString = file_get_contents($this->path);
+    private function createArrayFromFile($hasHeaders, $fromContext = FALSE){
         $this->csvStringToArray($this->csvString, $hasHeaders);
     }
 
@@ -308,10 +315,16 @@ class EasyCSV
      * Function to handle the return of the CSV file. either as a string or straight to the browser.
      * @return $this
      */
-    public function downloadCsv()
+    public function downloadCsv($asString = FALSE)
     {
         //We're outputting to the browser, so no need to store locally. Simply process and pass the data back
-        if ($this->path == 'php://output') {
+        if ($asString === FALSE) {
+            //make sure we have data to output if the data is in temp currently.
+            if($this->path != 'php://output'){
+                //if we have an open pointer, read from it. Otherwise, read from the path.
+                $contents = !empty($this->csvString) ? $this->csvString : file_get_contents($this->path);
+                file_put_contents('php://output', $contents);
+            }
             $this->_setExportHeaders();
             $this->_closeFilepointer();
             return $this;
@@ -327,6 +340,8 @@ class EasyCSV
      */
     public function addRows($rows)
     {
+        //this needs to be a multidimentional array
+        $rows = is_array($rows[0]) ? $rows : [$rows];
         $this->_processRows($rows);
         return $this;
     }
@@ -336,22 +351,50 @@ class EasyCSV
      * @return bool|string
      */
     public function getCSVString(){
-        return stream_get_contents($this->cp);
+        return $this->csvString;
     }
 
     /**
-     * Function to merge file points. All files are appended in order to the file passed as the first argument
+     * Function to merge file points (or strings, or both). All files are appended in order to the file passed as the first argument
+     * NOTE will preserve headers and append any new ones.
+     * @todo - test this.
      * @param $mergedFileName.
-     * @param $pointers
-     * @return
+     * @param $pointers (e.g. from fopen)
+     * @return EasyCSV
      */
     public static function mergeFiles($mergedFileName, ...$pointers){
-        $pointers = func_get_args();
+        self::clearPHPTemp();
         foreach ($pointers as $file){
-            file_put_contents($mergedFileName, $file, FILE_APPEND);
+            $contents = self::is_pointer() ? stream_get_contents($file, -1, 0) : $file;
+            file_put_contents('php://temp', $contents, FILE_APPEND);
         }
         $eaCSV = new EasyCSV();
-        return $eaCSV->csvStringToArray(file_get_contents($mergedFileName));
+        $eaCSV->setFileName($mergedFileName);
+        $eaCSV->csvStringToArray(file_get_contents('php://temp'));
+        self::clearPHPTemp();
+        return $eaCSV;
+    }
+
+    /**
+     * Function to clear the php temp buffer, normally in preperation for file merging.
+     * hacky - open php temp, wipe it clean then close the pointer.
+     * may not be needed - needs testing.
+     */
+    public static function clearPHPTemp(){
+        $tempPointer = fopen('php://temp', 'w+');
+        fclose($tempPointer);
+    }
+
+    /**
+     * Function to check if the passed var is a file pointer or not.
+     * @param $pointer
+     * @return bool
+     */
+    public static function isPointer($pointer){
+        if(get_resource_type($pointer) == 'file' || get_resource_type($pointer) == 'stream') {
+            return TRUE;
+        }
+        return FALSE;
     }
 
 }
