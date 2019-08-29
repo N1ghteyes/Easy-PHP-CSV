@@ -342,6 +342,7 @@ class EasyCSV
     {
         //this needs to be a multidimentional array
         $rows = is_array($rows[0]) ? $rows : [$rows];
+        $this->openFile();
         $this->_processRows($rows);
         return $this;
     }
