@@ -432,8 +432,8 @@ class EasyCSV
      */
     private function fputcsvEOL($data) {
         $response = fputcsv($this->cp, $data, $this->deliminator, $this->enclosure);
-        if($response !== FALSE && "\n" != $this->eol && 0 === fseek($handle, -1, SEEK_CUR)) {
-            fwrite($handle, $this->eol);
+        if($response !== FALSE && "\n" != $this->eol && 0 === fseek($this->cp, -1, SEEK_CUR)) {
+            fwrite($this->cp, $this->eol);
         }
         return $response;
     }
