@@ -342,7 +342,8 @@ class EasyCSV
         foreach ($pointers as $file){
             file_put_contents($mergedFileName, $file, FILE_APPEND);
         }
-        return fopen($mergedFileName, 'w');
+        $eaCSV = new EasyCSV();
+        return $eaCSV->csvStringToArray(file_get_contents($mergedFileName));
     }
 
 }
