@@ -331,4 +331,18 @@ class EasyCSV
         return $this;
     }
 
+    /**
+     * Function to merge file points. All files are appended in order to the file passed as the first argument
+     * @param $mergedFileName.
+     * @param $pointers
+     * @return
+     */
+    public static function mergeFiles($mergedFileName, ...$pointers){
+        $pointers = func_get_args();
+        foreach ($pointers as $file){
+            file_put_contents($mergedFileName, $file, FILE_APPEND);
+        }
+        return fopen($mergedFileName, 'w');
+    }
+
 }
