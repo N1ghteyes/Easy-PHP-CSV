@@ -365,7 +365,7 @@ class EasyCSV
     public static function mergeFiles($mergedFileName, ...$pointers){
         self::clearPHPTemp();
         foreach ($pointers as $file){
-            $contents = self::isPointer() ? stream_get_contents($file, -1, 0) : $file;
+            $contents = self::isPointer($file) ? stream_get_contents($file, -1, 0) : $file;
             file_put_contents('php://temp', $contents, FILE_APPEND);
         }
         $eaCSV = new EasyCSV();
