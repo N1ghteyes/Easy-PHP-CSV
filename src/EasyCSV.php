@@ -332,6 +332,14 @@ class EasyCSV
     }
 
     /**
+     * Function to get the current csv data as a string.
+     * @return bool|string
+     */
+    public function getCSVString(){
+        return stream_get_contents($this->cp);
+    }
+
+    /**
      * Function to merge file points. All files are appended in order to the file passed as the first argument
      * @param $mergedFileName.
      * @param $pointers
