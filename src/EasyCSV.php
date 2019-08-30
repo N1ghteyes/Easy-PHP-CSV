@@ -13,7 +13,8 @@ use \ForceUTF8\Encoding;
  * @link https://github.com/N1ghteyes/Easy-PHP-CSV
  *
  * @TODO: many many things. including finish up and produce a release.
- * @TODO: much tidying, streamlining and otherwise sanitizing of code.
+ * @TODO allow separate storage of CSV Strings - Memcache / Redis?
+ * @Todo add Driver classes for memory management, writing etc.
  */
 class EasyCSV
 {
@@ -141,9 +142,8 @@ class EasyCSV
             }
         }
         //If path isn't set, we must be working with php output.
-        $initialFile = !$this->path ? file_get_contents('php://output') : file_get_contents($this->path); //load the file contents
         $this->cp = fopen($this->storePath, 'w+'); //open a new file.
-        fwrite($this->cp, $initialFile);
+        fwrite($this->cp, $this->csvString); //write out the csv string.
         //we dont close the file pointer in case we want to interact with the file again this session
         return $this;
     }
@@ -179,14 +179,19 @@ class EasyCSV
      * Open a local csv file
      * @param bool $allowEditing
      */
-    private function openFile($allowEditing = TRUE){
-        //check the mode to open the file.
-        if(empty($this->cp)) {
-            $mode = $allowEditing ? 'c+' : 'r';
-            $this->cp = fopen($this->path, $mode);
-            //if we're editing, move the pointer to the end of the file.
-            if ($allowEditing) {
-                $this->endOfFile();
+    private function openFile($allowEditing = TRUE, $trucateFile = FALSE){
+        //force the file to be truncated reguardless.
+        if($trucateFile){
+            $this->cp = fopen($this->path, 'w+');
+        } else {
+            //check the mode to open the file.
+            if (empty($this->cp)) {
+                $mode = $allowEditing ? 'c+' : 'r';
+                $this->cp = fopen($this->path, $mode);
+                //if we're editing, move the pointer to the end of the file.
+                if ($allowEditing) {
+                    $this->endOfFile();
+                }
             }
         }
     }
@@ -245,8 +250,12 @@ class EasyCSV
         $this->updateCsvString();
     }
 
+    /**
+     * Update the csv string stored by the class.
+     */
     private function updateCsvString(){
-        $this->csvString = stream_get_contents($this->cp, -1, 0);
+        $contents = stream_get_contents($this->cp, -1, 0);
+        $this->csvString = $contents != FALSE ? $contents : '';
     }
 
     /**
@@ -299,7 +308,7 @@ class EasyCSV
      * @param bool $safeHeaders
      * @return $this
      */
-    public function csvStringToArray($string = "", $hasHeaders = FALSE, $safeHeaders = TRUE){
+    public function csvStringToArray($string = "", $hasHeaders = FALSE, $safeHeaders = TRUE, $rebuildFileData = FALSE){
         $this->csvString = !empty($string) ? $string : $this->csvString;
         $this->csvArray = array(); //reset this, just in case.
         $headers = array();
@@ -326,6 +335,12 @@ class EasyCSV
             } else {
                 $this->csvArray[$i] = $rowdata; //no headers? no point processing.
             }
+        }
+
+        //the last thing we need to do is make sure we have file data opened and built. This will always happen if cp is false.
+        if(empty($this->cp) || $rebuildFileData){
+            $this->openFile(TRUE, $rebuildFileData);
+            $this->arrayToCsv($this->csvArray, $headers, $hasHeaders);
         }
 
         return $this;
@@ -431,11 +446,21 @@ class EasyCSV
      * @return bool|int
      */
     private function fputcsvEOL($data) {
-        $response = fputcsv($this->cp, $data, $this->deliminator, $this->enclosure);
-        if($response !== FALSE && "\n" != $this->eol && 0 === fseek($this->cp, -1, SEEK_CUR)) {
-            fwrite($this->cp, $this->eol);
+        if($data) {
+            $response = fputcsv($this->cp, $data, $this->deliminator, $this->enclosure);
+            if ($response !== FALSE && "\n" != $this->eol && 0 === fseek($this->cp, -1, SEEK_CUR)) {
+                fwrite($this->cp, $this->eol);
+            }
+            return $response;
         }
-        return $response;
+        return FALSE;
     }
 
+    /**
+     * Impliments magic __destruct method to close the file pointer.
+     */
+    public function __destruct()
+    {
+        $this->_closeFilepointer();
+    }
 }
