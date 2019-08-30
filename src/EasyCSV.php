@@ -63,9 +63,10 @@ class EasyCSV
      * @param $path
      * @return $this
      */
-    public function loadFromFile($path){
+    public function loadFromFile($path, $hasHeaders = TRUE){
         $this->setPathInfo($path);
         $this->openFile();
+        $this->createArrayFromFile($hasHeaders);
         return $this;
     }
 
@@ -297,7 +298,9 @@ class EasyCSV
      * Read the file contents and call the string to array method so we can treat a loaded csv file like an array
      * @param $hasHeaders
      */
-    private function createArrayFromFile($hasHeaders, $fromContext = FALSE){
+    private function createArrayFromFile($hasHeaders){
+        //if the path is php://output, stream wrappers wont work so try just getting the file contents.
+        $this->csvString = $this->path != 'php://output' ? stream_get_contents($this->cp, -1, 0) : file_get_contents($this->path);
         $this->csvStringToArray($this->csvString, $hasHeaders);
     }
 
