@@ -336,7 +336,7 @@ class EasyCSV
                 $rowCount = count($rowData);
                 for($r=0;$r < $rowCount; ++$r) {
                     //allow for uneven row lengths
-                    $this->csvArray[$i][$headers[$r]] = isset($rowdata[$r]) ? Encoding::fixUTF8($rowdata[$r], Encoding::ICONV_IGNORE) : '';
+                    $this->csvArray[$i][$headers[$r]] = isset($rowdata[$r]) ? Encoding::fixUTF8($rowData[$r], Encoding::ICONV_IGNORE) : '';
                 }
             } else {
                 $this->csvArray[$i] = $rowData; //no headers? no point processing.
