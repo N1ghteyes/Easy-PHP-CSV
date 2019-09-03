@@ -318,7 +318,6 @@ class EasyCSV
         //str_getcsv doesn't allow for new lines in cells. So we need to fudge this a bit.
         $this->csvString = str_replace($this->eol, $this->eolSReplacement, $this->csvString);
         $rows = str_getcsv($this->csvString, $this->deliminator, $this->enclosure);
-        //$rows = explode('\r\n', ); //Explode on new lows to get rows.
         if($hasHeaders){
             $unsafeHeaders = str_getcsv(array_shift($rows), $this->deliminator); //get the first row as headers
             if($safeHeaders){
