@@ -21,12 +21,12 @@ class EasyCSV
 
     private $path = 'php://temp'; //path location for csv file pointer.
     private $pathInfo; //path info for any loaded csv file
-    /** @var FILE  */
     private $cp; //csv File pointer storage
     private $deliminator; // Deliminator - not changeable after class is instantiated.
     private $storeFilename = 'export.csv';
     private $storePath = 'php://output';
-    private $eol = "\r\n"; //allows us to specify a specific EOL.
+    private $eol = "\r\n"; //allows us to specify a specific EOL for cells that contain new lines.
+    private $eolSReplacement = ':@NLINE@:';
     private $enclosure = '"';
 
     public $loadedFilename;
@@ -315,7 +315,10 @@ class EasyCSV
         $this->csvString = !empty($string) ? $string : $this->csvString;
         $this->csvArray = array(); //reset this, just in case.
         $headers = array();
-        $rows = explode('\r\n', str_replace("\r\n", '\\r\\n', $this->csvString)); //Explode on new lows to get rows.
+        //str_getcsv doesn't allow for new lines in cells. So we need to fudge this a bit.
+        $this->csvString = str_replace($this->eol, $this->eolSReplacement, $this->csvString);
+        $rows = str_getcsv($this->csvString, $this->deliminator, $this->enclosure);
+        //$rows = explode('\r\n', ); //Explode on new lows to get rows.
         if($hasHeaders){
             $unsafeHeaders = str_getcsv(array_shift($rows), $this->deliminator); //get the first row as headers
             if($safeHeaders){
@@ -328,15 +331,15 @@ class EasyCSV
         }
         $rowNum = count($rows);
         for($i=0; $i < $rowNum; ++$i){
-            $rowdata = str_getcsv($rows[$i], $this->deliminator);
+            $rowData = str_replace($this->eolSReplacement, $this->eol, $rows[$i]);
             if(!empty($headers)) {
-                $rowCount = count($rowdata);
+                $rowCount = count($rowData);
                 for($r=0;$r < $rowCount; ++$r) {
                     //allow for uneven row lengths
                     $this->csvArray[$i][$headers[$r]] = isset($rowdata[$r]) ? Encoding::fixUTF8($rowdata[$r], Encoding::ICONV_IGNORE) : '';
                 }
             } else {
-                $this->csvArray[$i] = $rowdata; //no headers? no point processing.
+                $this->csvArray[$i] = $rowData; //no headers? no point processing.
             }
         }
 
