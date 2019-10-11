@@ -240,13 +240,13 @@ class EasyCSV
             if ($pos != FALSE) { //if false, or 0 we can ignore this.
                 $initialfile = file_get_contents($this->path); //load the file contents
                 $this->openFile();
-                $this->fputcsvEOL($csvHead); //write the header to the top of the new file
+                $this->fputcsv($csvHead); //write the header to the top of the new file
                 fwrite($this->cp, $initialfile); //add the old file onto the end of the header.
             } else {
-                $this->fputcsvEOL($csvHead);
+                $this->fputcsv($csvHead);
             }
         } else {
-            $this->fputcsvEOL($csvHead);
+            $this->fputcsv($csvHead);
         }
         $this->updateCsvString();
     }
@@ -268,7 +268,7 @@ class EasyCSV
         $rows = count($csvArray); //count the rows, allows usage of for loops - much faster than foreach in this context.
         $keys = array_keys($csvArray); //handle non numeric, non 0 arrays.
         for ($i = 0; $i < $rows; ++$i) {
-            $this->fputcsvEOL((array)$csvArray[$keys[$i]]); // We typecast to arrays in case we're passed an array of objects.
+            $this->fputcsv((array)$csvArray[$keys[$i]]); // We typecast to arrays in case we're passed an array of objects.
         }
         $this->updateCsvString();
         return $this;
@@ -468,13 +468,9 @@ class EasyCSV
      * @param $data
      * @return bool|int
      */
-    private function fputcsvEOL($data) {
+    private function fputcsv($data) {
         if($data) {
-            $response = fputcsv($this->cp, $data, $this->deliminator, $this->enclosure);
-            if ($response !== FALSE && "\n" != $this->eol && 0 === fseek($this->cp, -1, SEEK_CUR)) {
-                fwrite($this->cp, $this->eol);
-            }
-            return $response;
+            return fputcsv($this->cp, $data, $this->deliminator, $this->enclosure);
         }
         return FALSE;
     }
