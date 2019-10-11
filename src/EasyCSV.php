@@ -353,9 +353,9 @@ class EasyCSV
                 $cleanData = str_replace($this->eolSReplacement, $this->eol, $row[$r]);
                 $cellData = isset($cleanData) ? Encoding::fixUTF8($data, Encoding::ICONV_IGNORE) : '';
                 if(isset($headers[$r])){
-                    $data[$headers[$r]] = $cellData;
+                    $data[$headers[$r]] = trim($cellData, $this->eol); //trim EOL from the cells.
                 } else {
-                    $data[] = $cellData;
+                    $data[] = trim($cellData, $this->eol); //trim EOL from the cells.;
                 }
             }
         }
