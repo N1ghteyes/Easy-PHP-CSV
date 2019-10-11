@@ -344,7 +344,12 @@ class EasyCSV
 
     protected function _processCsvRow($row, $headers = []){
         if((is_string($row))){
-            $data = str_replace($this->eolSReplacement, $this->eol, $row);
+            $cellData = str_replace($this->eolSReplacement, $this->eol, $row);
+            if(!empty($headers)){
+                $data[$headers[0]] = trim($cellData, $this->eol); //trim EOL from the cells.
+            } else {
+                $data = trim($cellData, $this->eol); //trim EOL from the cells.;
+            }
         } else {
             $rowCount = count($row);
             $data = [];
