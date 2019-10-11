@@ -291,7 +291,9 @@ class EasyCSV
      */
     private function _closeFilepointer()
     {
-        fclose($this->cp); //we're outputting to browser so just close the pointer.
+        if(is_resource($this->cp)) {
+            fclose($this->cp); //we're outputting to browser so just close the pointer.
+        }
     }
 
     /**
