@@ -330,16 +330,7 @@ class EasyCSV
         }
         $rowNum = count($rows);
         for($i=0; $i < $rowNum; ++$i){
-            $rowData = str_replace($this->eolSReplacement, $this->eol, $rows[$i]);
-            if(!empty($headers)) {
-                $rowCount = count($rowData);
-                for($r=0;$r < $rowCount; ++$r) {
-                    //allow for uneven row lengths
-                    $this->csvArray[$i][$headers[$r]] = isset($rowdata[$r]) ? Encoding::fixUTF8($rowData[$r], Encoding::ICONV_IGNORE) : '';
-                }
-            } else {
-                $this->csvArray[$i] = $rowData; //no headers? no point processing.
-            }
+            $this->csvArray[$i] = $this->_processCsvRow($rows[$i], $headers);
         }
 
         //the last thing we need to do is make sure we have file data opened and built. This will always happen if cp is false.
@@ -349,6 +340,26 @@ class EasyCSV
         }
 
         return $this;
+    }
+
+    protected function _processCsvRow($row, $headers = []){
+        if((is_string($row))){
+            $data = str_replace($this->eolSReplacement, $this->eol, $row);
+        } else {
+            $rowCount = count($row);
+            $data = [];
+            for($r=0;$r < $rowCount; ++$r) {
+                //allow for uneven row lengths
+                $cleanData = str_replace($this->eolSReplacement, $this->eol, $row[$r]);
+                $cellData = isset($cleanData) ? Encoding::fixUTF8($data, Encoding::ICONV_IGNORE) : '';
+                if(isset($headers[$r])){
+                    $data[$headers[$r]] = $cellData;
+                } else {
+                    $data[] = $cellData;
+                }
+            }
+        }
+        return $data;
     }
 
     /**
