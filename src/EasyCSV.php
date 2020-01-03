@@ -173,7 +173,7 @@ class EasyCSV
         if($loading) {
             $this->loadedFilename = $this->pathInfo['filename'];
         } else {
-            $this->storeFilename = $this->pathInfo['filename'];
+            $this->storeFilename = !empty($this->pathInfo['extension']) ? $this->pathInfo['filename'] . '.' . $this->pathInfo['extension'] : $this->storeFilename;
             $this->storePath = $path;
         }
         $this->path = $path;
