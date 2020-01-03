@@ -142,7 +142,10 @@ class EasyCSV
                 return FALSE;
             }
         }
-        //If path isn't set, we must be working with php output.
+        //If path isn't set, check if we're working with php output. If not, we need to store to the filename provided.
+        if($this->storePath != 'php://output'){
+            $this->storePath .= '/'.$this->storeFilename;
+        }
         $this->cp = fopen($this->storePath, 'w+'); //open a new file.
         fwrite($this->cp, $this->csvString); //write out the csv string.
         //we dont close the file pointer in case we want to interact with the file again this session
