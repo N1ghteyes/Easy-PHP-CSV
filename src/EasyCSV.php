@@ -381,12 +381,12 @@ class EasyCSV
         //We're outputting to the browser, so no need to store locally. Simply process and pass the data back
         if ($asString === FALSE) {
             //make sure we have data to output if the data is in temp currently.
+            $this->_setExportHeaders();
             if($this->path != 'php://output'){
                 //if we have an open pointer, read from it. Otherwise, read from the path.
                 $contents = !empty($this->csvString) ? $this->csvString : file_get_contents($this->path);
                 file_put_contents('php://output', $contents);
             }
-            $this->_setExportHeaders();
             $this->_closeFilepointer();
             return $this;
         }
