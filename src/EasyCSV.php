@@ -321,7 +321,6 @@ class EasyCSV
         $this->csvArray = array(); //reset this, just in case.
         $headers = array();
         //str_getcsv doesn't allow for new lines in cells. So we need to fudge this a bit.
-        //$this->csvString = str_replace($this->eol, $this->eolSReplacement, $this->csvString);
         $rows = explode('\r\n', str_replace("\r\n", '\\r\\n', $this->csvString));
         if($hasHeaders){
             $unsafeHeaders = str_getcsv(array_shift($rows), $this->deliminator); //get the first row as headers
@@ -335,7 +334,7 @@ class EasyCSV
         }
         $rowNum = count($rows);
         for($i=0; $i < $rowNum; ++$i){
-            $this->csvArray[$i] = $this->_processCsvRow($rows[$i], $headers);
+            $this->csvArray[$i] = $this->_processCsvRow(str_getcsv($rows[$i]), $headers);
         }
 
         //the last thing we need to do is make sure we have file data opened and built. This will always happen if cp is false.
@@ -361,7 +360,7 @@ class EasyCSV
             for($r=0;$r < $rowCount; ++$r) {
                 //allow for uneven row lengths
                 $cleanData = str_replace($this->eolSReplacement, $this->eol, $row[$r]);
-                $cellData = isset($cleanData) ? Encoding::fixUTF8($data, Encoding::ICONV_IGNORE) : '';
+                $cellData = isset($cleanData) ? Encoding::fixUTF8($cleanData, Encoding::ICONV_IGNORE) : '';
                 if(isset($headers[$r])){
                     $data[$headers[$r]] = trim($cellData, $this->eol); //trim EOL from the cells.
                 } else {
