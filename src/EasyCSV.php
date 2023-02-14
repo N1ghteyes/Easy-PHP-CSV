@@ -183,7 +183,7 @@ class EasyCSV
         if ($loading) {
             $this->loadedFilename = $this->pathInfo['filename'];
         } else {
-            $this->storeFilename = !empty($this->pathInfo['extension']) ? $this->pathInfo['filename'] . '.' . $this->pathInfo['extension'] : $this->storeFilename;
+            $this->storeFilename = empty($this->pathInfo['extension']) ? $this->storeFilename : $this->pathInfo['filename'] . '.' . $this->pathInfo['extension'];
             $this->storePath = $path;
         }
         $this->path = $path;
@@ -198,15 +198,14 @@ class EasyCSV
         //force the file to be truncated reguardless.
         if ($trucateFile) {
             $this->cp = fopen($this->path, 'w+');
-        } else {
+        } elseif (empty($this->cp)) {
             //check the mode to open the file.
-            if (empty($this->cp)) {
-                $mode = $allowEditing ? 'c+' : 'r';
-                $this->cp = fopen($this->path, $mode);
-                //if we're editing, move the pointer to the end of the file.
-                if ($allowEditing) {
-                    $this->endOfFile();
-                }
+            //if we're editing, move the pointer to the end of the file.
+            $mode = $allowEditing ? 'c+' : 'r';
+            $this->cp = fopen($this->path, $mode);
+            //if we're editing, move the pointer to the end of the file.
+            if ($allowEditing) {
+                $this->endOfFile();
             }
         }
     }
@@ -332,7 +331,7 @@ class EasyCSV
      */
     public function csvStringToArray($string = "", $hasHeaders = false, $safeHeaders = true, $rebuildFileData = false)
     {
-        $this->csvString = !empty($string) ? $string : $this->csvString;
+        $this->csvString = empty($string) ? $this->csvString : $string;
         $this->csvArray = array(); //reset this, just in case.
         $headers = array();
         //str_getcsv doesn't allow for new lines in cells. So we need to fudge this a bit.
@@ -399,7 +398,7 @@ class EasyCSV
             $this->_setExportHeaders();
             if ($this->path != 'php://output') {
                 //if we have an open pointer, read from it. Otherwise, read from the path.
-                $contents = !empty($this->csvString) ? $this->csvString : file_get_contents($this->path);
+                $contents = empty($this->csvString) ? file_get_contents($this->path) : $this->csvString;
                 file_put_contents('php://output', $contents);
             }
             $this->_closeFilepointer();
@@ -476,12 +475,9 @@ class EasyCSV
      * @param $pointer
      * @return bool
      */
-    public static function isPointer($pointer)
+    public static function isPointer($pointer): bool
     {
-        if (get_resource_type($pointer) == 'file' || get_resource_type($pointer) == 'stream') {
-            return true;
-        }
-        return false;
+        return get_resource_type($pointer) == 'file' || get_resource_type($pointer) == 'stream';
     }
 
     /**
