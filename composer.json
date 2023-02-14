@@ -3,8 +3,8 @@
   "description": "Package to make creation and management of CSV files easy.",
   "type": "library",
   "require": {
-    "php" : "^7.0",
-    "neitanod/forceutf8": "^2.0"
+    "php" : "^8.2",
+    "fylax/forceutf8": "^3.0"
   },
   "authors": [
     {
