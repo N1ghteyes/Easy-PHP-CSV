@@ -1,6 +1,6 @@
 {
   "name": "easy-php-csv",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A PHP class to make creating, manipulating, merging, saving and downloading CSV files (and data) and simple as possible.",
   "main": "index.js",
   "scripts": {
