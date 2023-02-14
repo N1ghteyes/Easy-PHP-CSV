@@ -2,7 +2,7 @@
 
 namespace apexl;
 
-use \ForceUTF8\Encoding;
+use ForceUTF8\Encoding;
 
 /**
  * PHP class to easily handle CSV files
@@ -18,7 +18,6 @@ use \ForceUTF8\Encoding;
  */
 class EasyCSV
 {
-
     private $path = 'php://temp'; //path location for csv file pointer.
     private $pathInfo; //path info for any loaded csv file
     private $cp; //csv File pointer storage
@@ -45,7 +44,8 @@ class EasyCSV
      * @param $fileName
      * @return $this
      */
-    public function setFileName($fileName){
+    public function setFileName($fileName)
+    {
         $this->storeFilename = $fileName;
         return $this;
     }
@@ -54,7 +54,8 @@ class EasyCSV
      * Get the loaded filename
      * @return mixed
      */
-    public function getFileName(){
+    public function getFileName()
+    {
         return $this->loadedFilename;
     }
 
@@ -63,7 +64,8 @@ class EasyCSV
      * @param $path
      * @return $this
      */
-    public function loadFromFile($path, $hasHeaders = TRUE){
+    public function loadFromFile($path, $hasHeaders = true)
+    {
         $this->setPathInfo($path);
         $this->openFile();
         $this->createArrayFromFile($hasHeaders);
@@ -74,7 +76,8 @@ class EasyCSV
      * Function setter for $eol
      * @param $eol
      */
-    public function setEol($eol){
+    public function setEol($eol)
+    {
         $this->eol = $eol;
     }
 
@@ -82,7 +85,8 @@ class EasyCSV
      * Function setter for $enclosure
      * @param $enclosure
      */
-    public function setEnclosure($enclosure){
+    public function setEnclosure($enclosure)
+    {
         $this->enclosure = $enclosure;
     }
 
@@ -90,8 +94,9 @@ class EasyCSV
      * @param bool $hasHeaders
      * @return array
      */
-    public function toArray($hasHeaders = TRUE){
-        $this->createArrayFromFile($hasHeaders, TRUE);
+    public function toArray($hasHeaders = true)
+    {
+        $this->createArrayFromFile($hasHeaders, true);
         return $this->csvArray;
     }
 
@@ -101,18 +106,19 @@ class EasyCSV
      * @param array $headers
      * @param bool $headersInData
      */
-    public function arrayToCsv($data, $headers = [], $headersInData = TRUE){
+    public function arrayToCsv($data, $headers = [], $headersInData = true)
+    {
         //to begin with we use php output. We can store permanently later if we want to.
         $this->openFile();
         //headers as keys in data? grab the first row and the keys.
-        $hasHeaders = empty($headers) && $headersInData === FALSE ? FALSE : TRUE;
-        if($headersInData){
+        $hasHeaders = empty($headers) && $headersInData === false ? false : true;
+        if ($headersInData) {
             $firstElement = reset($data);
             //check if we have multiple rows, or just the one.
             $headers = is_array($firstElement) ? array_keys($firstElement) : array_keys($data);
         }
 
-        if($hasHeaders) {
+        if ($hasHeaders) {
             $this->_processHeader($headers);
         }
         //check if data is a single row, or an array of rows, set accordingly.
@@ -124,7 +130,8 @@ class EasyCSV
      * @param $data
      * @param array $headers
      */
-    public function appendDataToCsv($data, $headers = []){
+    public function appendDataToCsv($data, $headers = [])
+    {
         //@todo write this
     }
 
@@ -132,18 +139,19 @@ class EasyCSV
      * Function to store the current csv data
      * @return $this|bool
      */
-    public function store(){
-        if(!$this->storePath){
+    public function store()
+    {
+        if (!$this->storePath) {
             //if we dont have a store path, but we do have a path set, assume we're trying to store back to the loaded file.
-            if($this->path){
+            if ($this->path) {
                 $this->storePath = $this->path;
             } else {
                 //throw error as we can't store this.
-                return FALSE;
+                return false;
             }
         }
         //If path isn't set, check if we're working with php output. If not, we need to store to the filename provided.
-        if($this->storePath != 'php://output'){
+        if ($this->storePath != 'php://output') {
             $this->storePath .= '/'.$this->storeFilename;
         }
         $this->cp = fopen($this->storePath, 'w+'); //open a new file.
@@ -158,8 +166,9 @@ class EasyCSV
      * @param $path
      * @return $this
      */
-    public function setStorePath($path){
-        $this->setPathInfo($path, FALSE);
+    public function setStorePath($path)
+    {
+        $this->setPathInfo($path, false);
         return $this;
     }
 
@@ -168,9 +177,10 @@ class EasyCSV
      * @param $path
      * @param bool $loading
      */
-    private function setPathInfo($path, $loading = TRUE){
+    private function setPathInfo($path, $loading = true)
+    {
         $this->pathInfo = pathinfo($path);
-        if($loading) {
+        if ($loading) {
             $this->loadedFilename = $this->pathInfo['filename'];
         } else {
             $this->storeFilename = !empty($this->pathInfo['extension']) ? $this->pathInfo['filename'] . '.' . $this->pathInfo['extension'] : $this->storeFilename;
@@ -183,9 +193,10 @@ class EasyCSV
      * Open a local csv file
      * @param bool $allowEditing
      */
-    private function openFile($allowEditing = TRUE, $trucateFile = FALSE){
+    private function openFile($allowEditing = true, $trucateFile = false)
+    {
         //force the file to be truncated reguardless.
-        if($trucateFile){
+        if ($trucateFile) {
             $this->cp = fopen($this->path, 'w+');
         } else {
             //check the mode to open the file.
@@ -204,7 +215,8 @@ class EasyCSV
      * Method to move the file pointer to the end of the opened file. allows us to append additional rows etc
      * @return $this
      */
-    private function endOfFile(){
+    private function endOfFile()
+    {
         fseek($this->cp, 0, SEEK_END);
         return $this;
     }
@@ -236,11 +248,11 @@ class EasyCSV
      * @param bool|FALSE $start
      * @todo - actually test this works..
      */
-    private function _processHeader($csvHead, $start = FALSE)
+    private function _processHeader($csvHead, $start = false)
     {
         if ($start) { //if start is true, add a line to the start of the csv. To do this, we need to create copy any existing data and recreate the file.
             $pos = fgets($this->cp);
-            if ($pos != FALSE) { //if false, or 0 we can ignore this.
+            if ($pos != false) { //if false, or 0 we can ignore this.
                 $initialfile = file_get_contents($this->path); //load the file contents
                 $this->openFile();
                 $this->fputcsv($csvHead); //write the header to the top of the new file
@@ -257,9 +269,10 @@ class EasyCSV
     /**
      * Update the csv string stored by the class.
      */
-    private function updateCsvString(){
+    private function updateCsvString()
+    {
         $contents = stream_get_contents($this->cp, -1, 0);
-        $this->csvString = $contents != FALSE ? $contents : '';
+        $this->csvString = $contents != false ? $contents : '';
     }
 
     /**
@@ -294,7 +307,7 @@ class EasyCSV
      */
     private function _closeFilepointer()
     {
-        if(is_resource($this->cp)) {
+        if (is_resource($this->cp)) {
             fclose($this->cp); //we're outputting to browser so just close the pointer.
         }
     }
@@ -303,7 +316,8 @@ class EasyCSV
      * Read the file contents and call the string to array method so we can treat a loaded csv file like an array
      * @param $hasHeaders
      */
-    private function createArrayFromFile($hasHeaders){
+    private function createArrayFromFile($hasHeaders)
+    {
         //if the path is php://output, stream wrappers wont work so try just getting the file contents.
         $this->csvString = $this->path != 'php://output' ? stream_get_contents($this->cp, -1, 0) : file_get_contents($this->path);
         $this->csvStringToArray($this->csvString, $hasHeaders);
@@ -316,16 +330,17 @@ class EasyCSV
      * @param bool $safeHeaders
      * @return $this
      */
-    public function csvStringToArray($string = "", $hasHeaders = FALSE, $safeHeaders = TRUE, $rebuildFileData = FALSE){
+    public function csvStringToArray($string = "", $hasHeaders = false, $safeHeaders = true, $rebuildFileData = false)
+    {
         $this->csvString = !empty($string) ? $string : $this->csvString;
         $this->csvArray = array(); //reset this, just in case.
         $headers = array();
         //str_getcsv doesn't allow for new lines in cells. So we need to fudge this a bit.
         $rows = explode('\r\n', str_replace("\r\n", '\\r\\n', $this->csvString));
-        if($hasHeaders){
+        if ($hasHeaders) {
             $unsafeHeaders = str_getcsv(array_shift($rows), $this->deliminator); //get the first row as headers
-            if($safeHeaders){
-                foreach($unsafeHeaders as $header){
+            if ($safeHeaders) {
+                foreach ($unsafeHeaders as $header) {
                     $headers[] = trim(strtolower(str_replace(array('/', '\\', ' '), array('_'), $header)));
                 }
             } else {
@@ -333,23 +348,24 @@ class EasyCSV
             }
         }
         $rowNum = count($rows);
-        for($i=0; $i < $rowNum; ++$i){
+        for ($i=0; $i < $rowNum; ++$i) {
             $this->csvArray[$i] = $this->_processCsvRow(str_getcsv($rows[$i]), $headers);
         }
 
         //the last thing we need to do is make sure we have file data opened and built. This will always happen if cp is false.
-        if(empty($this->cp) || $rebuildFileData){
-            $this->openFile(TRUE, $rebuildFileData);
+        if (empty($this->cp) || $rebuildFileData) {
+            $this->openFile(true, $rebuildFileData);
             $this->arrayToCsv($this->csvArray, $headers, $hasHeaders);
         }
 
         return $this;
     }
 
-    protected function _processCsvRow($row, $headers = []){
-        if((is_string($row))){
+    protected function _processCsvRow($row, $headers = [])
+    {
+        if ((is_string($row))) {
             $cellData = str_replace($this->eolSReplacement, $this->eol, $row);
-            if(!empty($headers)){
+            if (!empty($headers)) {
                 $data[$headers[0]] = trim($cellData, $this->eol); //trim EOL from the cells.
             } else {
                 $data = trim($cellData, $this->eol); //trim EOL from the cells.;
@@ -357,11 +373,11 @@ class EasyCSV
         } else {
             $rowCount = count($row);
             $data = [];
-            for($r=0;$r < $rowCount; ++$r) {
+            for ($r=0;$r < $rowCount; ++$r) {
                 //allow for uneven row lengths
                 $cleanData = str_replace($this->eolSReplacement, $this->eol, $row[$r]);
                 $cellData = isset($cleanData) ? Encoding::fixUTF8($cleanData, Encoding::ICONV_IGNORE) : '';
-                if(isset($headers[$r])){
+                if (isset($headers[$r])) {
                     $data[$headers[$r]] = trim($cellData, $this->eol); //trim EOL from the cells.
                 } else {
                     $data[] = trim($cellData, $this->eol); //trim EOL from the cells.;
@@ -375,13 +391,13 @@ class EasyCSV
      * Function to handle the return of the CSV file. either as a string or straight to the browser.
      * @return $this
      */
-    public function downloadCsv($asString = FALSE)
+    public function downloadCsv($asString = false)
     {
         //We're outputting to the browser, so no need to store locally. Simply process and pass the data back
-        if ($asString === FALSE) {
+        if ($asString === false) {
             //make sure we have data to output if the data is in temp currently.
             $this->_setExportHeaders();
-            if($this->path != 'php://output'){
+            if ($this->path != 'php://output') {
                 //if we have an open pointer, read from it. Otherwise, read from the path.
                 $contents = !empty($this->csvString) ? $this->csvString : file_get_contents($this->path);
                 file_put_contents('php://output', $contents);
@@ -411,7 +427,8 @@ class EasyCSV
      * Function to get the current csv data as a string.
      * @return bool|string
      */
-    public function getCSVString(){
+    public function getCSVString()
+    {
         return $this->csvString;
     }
 
@@ -423,11 +440,12 @@ class EasyCSV
      * @param $pointers (e.g. from fopen)
      * @return EasyCSV
      */
-    public static function mergeFiles($mergedFileName, ...$pointers){
+    public static function mergeFiles($mergedFileName, ...$pointers)
+    {
         //we need to clear temp as we're writing in append mode.
         self::clearPHPTemp();
         $cp = fopen('php://temp', 'a+');
-        foreach ($pointers as $file){
+        foreach ($pointers as $file) {
             $contents = self::isPointer($file) ? stream_get_contents($file, -1, 0) : $file;
             //writing in a+ mode means we always append.
             fwrite($cp, $contents);
@@ -447,7 +465,8 @@ class EasyCSV
      * hacky - open php temp, wipe it clean then close the pointer.
      * may not be needed - needs testing.
      */
-    public static function clearPHPTemp(){
+    public static function clearPHPTemp()
+    {
         $tempPointer = fopen('php://temp', 'w+');
         fclose($tempPointer);
     }
@@ -457,11 +476,12 @@ class EasyCSV
      * @param $pointer
      * @return bool
      */
-    public static function isPointer($pointer){
-        if(get_resource_type($pointer) == 'file' || get_resource_type($pointer) == 'stream') {
-            return TRUE;
+    public static function isPointer($pointer)
+    {
+        if (get_resource_type($pointer) == 'file' || get_resource_type($pointer) == 'stream') {
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
     /**
@@ -470,11 +490,12 @@ class EasyCSV
      * @param $data
      * @return bool|int
      */
-    private function fputcsv($data) {
-        if($data) {
+    private function fputcsv($data)
+    {
+        if ($data) {
             return fputcsv($this->cp, $data, $this->deliminator, $this->enclosure);
         }
-        return FALSE;
+        return false;
     }
 
     /**
