@@ -1,3 +1,6 @@
+/vendor
 .idea
-.idea/*
-vendor/
+composer.lock
+.ddev
+.php-cs-fixer.cache
+/node_modules
