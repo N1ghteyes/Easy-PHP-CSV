@@ -96,7 +96,7 @@ class EasyCSV
      */
     public function toArray($hasHeaders = true)
     {
-        $this->createArrayFromFile($hasHeaders, true);
+        $this->createArrayFromFile($hasHeaders);
         return $this->csvArray;
     }
 
@@ -139,7 +139,7 @@ class EasyCSV
      * Function to store the current csv data
      * @return $this|bool
      */
-    public function store()
+    public function store(): static|bool
     {
         if (!$this->storePath) {
             //if we dont have a store path, but we do have a path set, assume we're trying to store back to the loaded file.
@@ -155,7 +155,7 @@ class EasyCSV
             $this->storePath .= '/'.$this->storeFilename;
         }
         $this->cp = fopen($this->storePath, 'w+'); //open a new file.
-        fwrite($this->cp, $this->csvString); //write out the csv string.
+        fwrite($this->cp, (string) $this->csvString); //write out the csv string.
         //we dont close the file pointer in case we want to interact with the file again this session
         return $this;
     }
@@ -179,7 +179,7 @@ class EasyCSV
      */
     private function setPathInfo($path, $loading = true)
     {
-        $this->pathInfo = pathinfo($path);
+        $this->pathInfo = pathinfo((string) $path);
         if ($loading) {
             $this->loadedFilename = $this->pathInfo['filename'];
         } else {
@@ -227,27 +227,18 @@ class EasyCSV
      */
     public function setDeliminator($deliminator = ',')
     {
-        switch ($deliminator) {
-            case 'comma':
-            case 'commer':
-                $delim = ',';
-                break;
-            case 'tab':
-            case '\t':
-                $delim = "\t";
-                break;
-            default:
-                $delim = $deliminator;
-        }
-        return $delim;
+        return match ($deliminator) {
+            'comma', 'commer' => ',',
+            'tab', '\t' => "\t",
+            default => $deliminator,
+        };
     }
 
     /**
      * @param $csvHead
-     * @param bool|FALSE $start
      * @todo - actually test this works..
      */
-    private function _processHeader($csvHead, $start = false)
+    private function _processHeader($csvHead, bool $start = false)
     {
         if ($start) { //if start is true, add a line to the start of the csv. To do this, we need to create copy any existing data and recreate the file.
             $pos = fgets($this->cp);
@@ -335,7 +326,7 @@ class EasyCSV
         $this->csvArray = array(); //reset this, just in case.
         $headers = array();
         //str_getcsv doesn't allow for new lines in cells. So we need to fudge this a bit.
-        $rows = explode('\r\n', str_replace("\r\n", '\\r\\n', $this->csvString));
+        $rows = explode('\r\n', str_replace("\r\n", '\\r\\n', (string) $this->csvString));
         if ($hasHeaders) {
             $unsafeHeaders = str_getcsv(array_shift($rows), $this->deliminator); //get the first row as headers
             if ($safeHeaders) {
@@ -374,12 +365,12 @@ class EasyCSV
             $data = [];
             for ($r=0;$r < $rowCount; ++$r) {
                 //allow for uneven row lengths
-                $cleanData = str_replace($this->eolSReplacement, $this->eol, $row[$r]);
+                $cleanData = str_replace($this->eolSReplacement, $this->eol, (string) $row[$r]);
                 $cellData = isset($cleanData) ? Encoding::fixUTF8($cleanData, Encoding::ICONV_IGNORE) : '';
                 if (isset($headers[$r])) {
-                    $data[$headers[$r]] = trim($cellData, $this->eol); //trim EOL from the cells.
+                    $data[$headers[$r]] = trim((string) $cellData, $this->eol); //trim EOL from the cells.
                 } else {
-                    $data[] = trim($cellData, $this->eol); //trim EOL from the cells.;
+                    $data[] = trim((string) $cellData, $this->eol); //trim EOL from the cells.;
                 }
             }
         }
@@ -424,9 +415,8 @@ class EasyCSV
 
     /**
      * Function to get the current csv data as a string.
-     * @return bool|string
      */
-    public function getCSVString()
+    public function getCSVString(): bool|string
     {
         return $this->csvString;
     }
@@ -447,7 +437,7 @@ class EasyCSV
         foreach ($pointers as $file) {
             $contents = self::isPointer($file) ? stream_get_contents($file, -1, 0) : $file;
             //writing in a+ mode means we always append.
-            fwrite($cp, $contents);
+            fwrite($cp, (string) $contents);
         }
         $mergedString = stream_get_contents($cp, -1, 0);
         fclose($cp);
@@ -473,7 +463,6 @@ class EasyCSV
     /**
      * Function to check if the passed var is a file pointer or not.
      * @param $pointer
-     * @return bool
      */
     public static function isPointer($pointer): bool
     {
@@ -484,9 +473,8 @@ class EasyCSV
      * Function to allow us to specify EOL for fputcsv. Resolved mixing \n in cells with EOL in csv files.
      * @see modified from https://stackoverflow.com/a/21297335
      * @param $data
-     * @return bool|int
      */
-    private function fputcsv($data)
+    private function fputcsv($data): bool|int
     {
         if ($data) {
             return fputcsv($this->cp, $data, $this->deliminator, $this->enclosure);
